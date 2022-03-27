@@ -11,6 +11,14 @@ const secretToUint8Array = (secret: string | BufferSource) => typeof secret === 
   ? new TextEncoder().encode(secret)
   : bufferSourceToUint8Array(secret);
 
+export interface SignedCookieStoreOptions {
+  /**
+   * One or more crypto keys that were previously used to sign cookies.
+   * `SignedCookieStore` will try to verify the signature using these, but they are not used for signing.
+   */
+  keyring?: readonly CryptoKey[],
+}
+
 export interface DeriveOptions {
   secret: string | BufferSource | JsonWebKey
   salt?: BufferSource
@@ -70,17 +78,17 @@ export class SignedCookieStore implements CookieStore {
   }
 
   #store: CookieStore;
-  #keyRing: readonly CryptoKey[];
+  #keyring: readonly CryptoKey[];
   #key: CryptoKey;
 
-  constructor(store: CookieStore, key: CryptoKey, ...keyRing: readonly CryptoKey[]) {
+  constructor(store: CookieStore, key: CryptoKey, opts: SignedCookieStoreOptions = {}) {
     this.#store = store;
     this.#key = key;
-    this.#keyRing = [key, ...keyRing];
+    this.#keyring = [key, ...opts.keyring ?? []];
   }
 
   #verify = async (cookie: CookieListItem, sigCookie: CookieListItem) => {
-    for (const key of this.#keyRing) {
+    for (const key of this.#keyring) {
       const signature = new Base64Decoder().decode(sigCookie.value);
       const message = new TextEncoder().encode([cookie.name, cookie.value].join('='));
       const ok = await crypto.subtle.verify('HMAC', key, signature, message);
