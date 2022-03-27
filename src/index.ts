@@ -62,18 +62,23 @@ export class SignedCookieStore implements CookieStore {
   }
 
   #store: CookieStore;
+  #keyRing: readonly CryptoKey[];
   #key: CryptoKey;
 
-  constructor(store: CookieStore, key: CryptoKey) {
+  constructor(store: CookieStore, key: CryptoKey, ...keyRing: readonly CryptoKey[]) {
     this.#store = store;
     this.#key = key;
+    this.#keyRing = [key, ...keyRing];
   }
 
   #verify = async (cookie: CookieListItem, sigCookie: CookieListItem) => {
-    const signature = new Base64Decoder().decode(sigCookie.value);
-    const message = new TextEncoder().encode([cookie.name, cookie.value].join('='));
-    const ok = await crypto.subtle.verify('HMAC', this.#key, signature, message);
-    if (!ok) throw new Error('Invalid Signature');
+    for (const key of this.#keyRing) {
+      const signature = new Base64Decoder().decode(sigCookie.value);
+      const message = new TextEncoder().encode([cookie.name, cookie.value].join('='));
+      const ok = await crypto.subtle.verify('HMAC', key, signature, message);
+      if (ok) return true;
+    }
+    return false;
   }
 
   #sign = async (name: string, value: string): Promise<string> => {
@@ -91,13 +96,14 @@ export class SignedCookieStore implements CookieStore {
   async get(name?: string | CookieStoreGetOptions): Promise<CookieListItem | null> {
     if (typeof name !== 'string') throw Error('Overload not implemented.');
 
-    const cookie = await this.#store.get(name);
-    if (!cookie) return null;
+    const [cookie, sigCookie] = await Promise.all([
+      this.#store.get(name),
+      this.#store.get(`${name}${EXT}`),
+    ]);
+    if (!cookie || !sigCookie) return null;
 
-    const sigCookie = await this.#store.get(`${name}${EXT}`);
-    if (!sigCookie) return null;
-
-    await this.#verify(cookie, sigCookie);
+    const ok = await this.#verify(cookie, sigCookie);
+    if (!ok) throw Error('No key in the keyring can verify signature!')
 
     return cookie;
   }
