@@ -12,9 +12,13 @@ const secretToUint8Array = (secret: string | BufferSource) => typeof secret === 
   : bufferSourceToUint8Array(secret);
 
 export interface DeriveOptions {
-  secret: string | BufferSource,
-  salt?: BufferSource,
-  iterations?: number,
+  secret: string | BufferSource | JsonWebKey
+  salt?: BufferSource
+  iterations?: number
+  format?: KeyFormat,
+  hash?: HashAlgorithmIdentifier;
+  hmacHash?: HashAlgorithmIdentifier;
+  length?: number,
 }
 
 /**
@@ -32,18 +36,22 @@ export class SignedCookieStore implements CookieStore {
   static async deriveCryptoKey(opts: DeriveOptions): Promise<CryptoKey> {
     if (!opts.secret) throw Error('Secret missing');
 
-    const passphraseKey = await crypto.subtle.importKey(
-      'raw',
-      secretToUint8Array(opts.secret),
-      'PBKDF2',
-      false,
-      ['deriveKey']
+    const passphraseKey = await (opts.format === 'jwk'
+      ? crypto.subtle.importKey('jwk', opts.secret as JsonWebKey, 'PBKDF2', false, ['deriveKey'])
+      : crypto.subtle.importKey(
+        opts.format ?? 'raw',
+        secretToUint8Array(opts.secret as string | BufferSource),
+        'PBKDF2',
+        false,
+        ['deriveKey']
+      )
     );
+
     const key = await crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
         iterations: opts.iterations ?? 999,
-        hash: 'SHA-256',
+        hash: opts.hash ?? 'SHA-256',
         salt: opts.salt
           ? bufferSourceToUint8Array(opts.salt)
           : new UUID('a3491c45-b769-447f-87fd-64333c8d36f0')
@@ -51,8 +59,8 @@ export class SignedCookieStore implements CookieStore {
       passphraseKey,
       {
         name: 'HMAC',
-        hash: 'SHA-256',
-        length: 128
+        hash: opts.hmacHash ?? opts.hash ?? 'SHA-256',
+        length: opts.length ?? 128
       },
       false,
       ['sign', 'verify'],
