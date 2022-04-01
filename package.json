@@ -1,6 +1,6 @@
 {
   "name": "@worker-tools/signed-cookie-store",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A CookieStore implementation that transparently signs cookies via Web Cryptography API",
   "type": "module",
   "main": "index.js",
