@@ -1,9 +1,11 @@
 import { 
   CookieInit, CookieList, CookieListItem, CookieStore, CookieStoreDeleteOptions, CookieStoreGetOptions,
-} from "cookie-store-interface";
-import { UUID } from "uuid-class";
-import { bufferSourceToUint8Array } from "typed-array-utils";
-import { Base64Decoder, Base64Encoder } from "base64-encoding";
+} from 'https://esm.sh/cookie-store-interface@0.1.1/index.js';
+export * from 'https://esm.sh/cookie-store-interface@0.1.1/index.js';
+
+import { UUID } from "https://esm.sh/uuid-class@0.12.3/index.js?module";
+import { bufferSourceToUint8Array } from "https://esm.sh/typed-array-utils@0.2.2/index.js?module";
+import { Base64Decoder, Base64Encoder } from "https://esm.sh/base64-encoding@0.14.3/index.js?module";
 
 const EXT = '.sig';
 
@@ -51,7 +53,7 @@ export class SignedCookieStore implements CookieStore {
         secretToUint8Array(opts.secret as string | BufferSource),
         'PBKDF2',
         false,
-        ['deriveKey']
+        ['deriveKey', 'deriveBits']
       )
     );
 
@@ -166,6 +168,7 @@ export class SignedCookieStore implements CookieStore {
         this.#store.set(sigCookieName, signature),
       ]);
     } else {
+      // deno-lint-ignore no-unused-vars
       const { name, value, ...init } = options;
       await Promise.all([
         this.#store.set(options),
@@ -195,5 +198,3 @@ export class SignedCookieStore implements CookieStore {
     return this.#store.removeEventListener(...args);
   }
 }
-
-export * from "cookie-store-interface";
