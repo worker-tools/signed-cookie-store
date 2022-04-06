@@ -43,7 +43,7 @@ await build({
     target: 'ES2019'
   },
   mappings: {
-    "https://ghuc.cc/cookie-store-interface/index.d.ts": {
+    "https://ghuc.cc/qwtel/cookie-store-interface/index.d.ts": {
       name: "cookie-store-interface",
       version: "^0.1.1",
     },
