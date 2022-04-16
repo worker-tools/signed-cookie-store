@@ -1,9 +1,8 @@
-import { 
+import type { 
   CookieInit, CookieList, CookieListItem, CookieStore, CookieStoreDeleteOptions, CookieStoreGetOptions,
 } from 'https://ghuc.cc/qwtel/cookie-store-interface/index.d.ts';
 export * from 'https://ghuc.cc/qwtel/cookie-store-interface/index.d.ts';
 
-import { UUID } from "https://ghuc.cc/qwtel/uuid-class/index.ts";
 import { bufferSourceToUint8Array } from "https://ghuc.cc/qwtel/typed-array-utils/index.ts";
 import { Base64Decoder, Base64Encoder } from "https://ghuc.cc/qwtel/base64-encoding/index.ts";
 
@@ -64,12 +63,12 @@ export class SignedCookieStore implements CookieStore {
         hash: opts.hash ?? 'SHA-256',
         salt: opts.salt
           ? bufferSourceToUint8Array(opts.salt)
-          : new UUID('a3491c45-b769-447f-87fd-64333c8d36f0')
+          : new Base64Decoder().decode('o0kcRbdpRH+H/WQzPI028A==')
       },
       passphraseKey,
       {
         name: 'HMAC',
-        hash: opts.hmacHash ?? opts.hash ?? 'SHA-256',
+        hash: opts.hmacHash ?? 'SHA-256',
         length: opts.length ?? 128
       },
       false,
